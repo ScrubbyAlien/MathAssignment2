@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using Vectors;
@@ -37,12 +39,7 @@ namespace MA317G_Assignment2
             }
         }
 
-        public float determinant {
-            get {
-                //TODO return the determinant of this matrix
-                return 0f;
-            }
-        }
+        public float determinant => CalculateDeterminant4x4(matrixArray);
 
         #endregion
 
@@ -217,6 +214,43 @@ namespace MA317G_Assignment2
             }
             return interpolated;
         }
+
+        public static float CalculateDeterminant4x4(float[] matrix) {
+            if (matrix.Length != 16) throw new Exception("Matrix is not 4x4");
+            float[] minor11 = Minor(matrix, 4, 0, 0, out float coeff11);
+            float[] minor12 = Minor(matrix, 4, 0, 1, out float coeff12);
+            float[] minor13 = Minor(matrix, 4, 0, 2, out float coeff13);
+            float[] minor14 = Minor(matrix, 4, 0, 3, out float coeff14);
+            return coeff11 * CalculateDeterminant3x3(minor11) +
+                   coeff12 * CalculateDeterminant3x3(minor12) +
+                   coeff13 * CalculateDeterminant3x3(minor13) +
+                   coeff14 * CalculateDeterminant3x3(minor14);
+        }
+        public static float CalculateDeterminant3x3(float[] matrix) {
+            if (matrix.Length != 9) throw new Exception("Matrix is not 3x3");
+            float[] minor11 = Minor(matrix, 3, 0, 0, out float coeff11);
+            float[] minor12 = Minor(matrix, 3, 0, 1, out float coeff12);
+            float[] minor13 = Minor(matrix, 3, 0, 2, out float coeff13);
+            return coeff11 * CalculateDeterminant2x2(minor11) +
+                   coeff12 * CalculateDeterminant2x2(minor12) +
+                   coeff13 * CalculateDeterminant2x2(minor13);
+        }
+        public static float CalculateDeterminant2x2(float[] matrix) {
+            if (matrix.Length != 4) throw new Exception("Matrix is not 2x2");
+            return (matrix[0] * matrix[3]) - (matrix[1] * matrix[2]);
+        }
+        public static float[] Minor(float[] matrix, int size, int i, int j, out float coefficient) {
+            coefficient = matrix[i * size + j] * (i + j % 2 == 0 ? 1 : -1);
+            List<float> minor = new List<float>();
+            for (int k = 0; k < size; k++) {
+                for (int m = 0; m < size; m++) {
+                    if (k != i && m != j) {
+                        minor.Add(matrix[k * size + m]);
+                    }
+                }
+            }
+            return minor.ToArray();
+        }
     }
 
     // Custom inspector displaying the matrix as a grid of floats, with a reset button.
@@ -227,10 +261,19 @@ namespace MA317G_Assignment2
             EditorGUI.BeginProperty(position, label, property);
 
             SerializedProperty matrix = property.FindPropertyRelative("matrixArray");
+
             int size = 4;
+            float[] matrixArray = new float[size * size];
+            for (int i = 0; i < size; i++) {
+                for (int j = 0; j < size; j++) {
+                    matrixArray[i * size + j] = matrix.GetArrayElementAtIndex(i * size + j).floatValue;
+                }
+            }
+
+            float determinant = TRSMatrix.CalculateDeterminant4x4(matrixArray);
 
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.PrefixLabel(label.text);
+            EditorGUILayout.PrefixLabel(label.text + $" (det: {determinant})");
             EditorGUILayout.BeginVertical();
 
             // Display the matrix as a grid of float fields. 4 rows and 4 columns.
