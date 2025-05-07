@@ -2,14 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using MA317G_Assignment2;
+using Vectors;
 
-[ExecuteAlways]
+[ExecuteAlways, RequireComponent(typeof(VectorRenderer))]
 public class Interpolator : MonoBehaviour
 {
     [SerializeField]
     private TRSMatrix startMatrix;
     [SerializeField]
     private TRSMatrix endMatrix;
+
+    private VectorRenderer vr;
 
     [SerializeField, Range(0, 1)]
     private float t = 0.5f;
@@ -18,20 +21,17 @@ public class Interpolator : MonoBehaviour
         get { return TRSMatrix.Interpolate(startMatrix, endMatrix, t); }
     }
 
-    [SerializeField]
-    private VectorCube startCube;
-    [SerializeField]
-    private VectorCube endCube;
-    [SerializeField]
-    private VectorCube interpolatedCube;
-
     // Start is called before the first frame update
-    void Start() { }
+    void OnEnable() {
+        vr = GetComponent<VectorRenderer>();
+    }
 
     // Update is called once per frame
     void Update() {
-        startCube.transform = startMatrix;
-        endCube.transform = endMatrix;
-        interpolatedCube.transform = interpolatedMatrix;
+        using (vr.Begin()) {
+            startMatrix.DrawCoordinateSystem(vr);
+            endMatrix.DrawCoordinateSystem(vr);
+            interpolatedMatrix.DrawCoordinateSystem(vr);
+        }
     }
 }

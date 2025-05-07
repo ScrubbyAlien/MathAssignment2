@@ -30,7 +30,6 @@ namespace MA317G_Assignment2
         }
         public static TRSMatrix identity {
             get {
-                //TODO return a new identity matrix instance
                 TRSMatrix I = new TRSMatrix();
                 for (int i = 0; i < SIZE; i++) {
                     I[i, i] = 1;
@@ -129,8 +128,7 @@ namespace MA317G_Assignment2
         /// <param name="point">A position in the coordinate space of this matrix.</param>
         /// <returns>The world space coordinates of the given position.</returns>
         public Vector3 MultiplyPoint(Vector3 point) {
-            Vector4 result = this * new Vector4(point.x, point.y, point.z, 1);
-            return new Vector3(result.x, result.y, result.z);
+            return this * new Vector4(point.x, point.y, point.z, 1);
         }
 
         #endregion
@@ -151,9 +149,35 @@ namespace MA317G_Assignment2
             //TODO return a new Vector3 instance that represents the scale of this matrix
             return new Vector3();
         }
-
+        
         public void DrawCoordinateSystem(VectorRenderer vr) {
-            //TODO visualize the coordinate system represented by this matrix
+            // visualize the coordinate system represented by this matrix
+            Vector4 point000 = MultiplyPoint(new Vector4(0, 0, 0, 1));
+            Vector4 point100 = MultiplyPoint(new Vector4(1, 0, 0, 1));
+            Vector4 point010 = MultiplyPoint(new Vector4(0, 1, 0, 1));
+            Vector4 point001 = MultiplyPoint(new Vector4(0, 0, 1, 1));
+            Vector4 point110 = MultiplyPoint(new Vector4(1, 1, 0, 1));
+            Vector4 point101 = MultiplyPoint(new Vector4(1, 0, 1, 1));
+            Vector4 point011 = MultiplyPoint(new Vector4(0, 1, 1, 1));
+            Vector4 point111 = MultiplyPoint(new Vector4(1, 1, 1, 1));
+            
+            // draw all x-aligned edges
+            vr.Draw(point000, point100, Color.red);
+            vr.Draw(point010, point110, Color.red);
+            vr.Draw(point001, point101, Color.red);
+            vr.Draw(point011, point111, Color.red);
+
+            // draw all y-aligned edges
+            vr.Draw(point000, point010, Color.green);
+            vr.Draw(point100, point110, Color.green);
+            vr.Draw(point001, point011, Color.green);
+            vr.Draw(point101, point111, Color.green);
+
+            // draw all z-aligned edges
+            vr.Draw(point000, point001, Color.blue);
+            vr.Draw(point100, point101, Color.blue);
+            vr.Draw(point010, point011, Color.blue);
+            vr.Draw(point110, point111, Color.blue);
         }
 
         #endregion
