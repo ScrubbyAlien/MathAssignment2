@@ -93,8 +93,7 @@ namespace MA317G_Assignment2
         }
 
         public static bool operator !=(TRSMatrix lhs, TRSMatrix rhs) {
-            if (lhs == rhs) return false;
-            else return true;
+            return !(lhs == rhs);
         }
 
         #region To avoid warnings from implementing == and != operators
