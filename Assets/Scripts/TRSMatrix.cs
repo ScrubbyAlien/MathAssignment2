@@ -307,10 +307,7 @@ namespace MA317G_Assignment2
             Quaternion betweenAB = q2 * q1.Conjugate();
 
             // return the identity if A and B have same orientation
-            if (Mathf.Abs(betweenAB.w) > 0.9999f) {
-                Debug.Log("w is almost 1");
-                return Quaternion.identity;
-            }
+            if (Mathf.Abs(betweenAB.w) > 0.9999f) return Quaternion.identity;
 
             float halfAngle = Mathf.Acos(betweenAB.w);
             float interpolatedAngle = halfAngle * t;
@@ -335,12 +332,17 @@ namespace MA317G_Assignment2
 
         #endregion
 
-        public static TRSMatrix Interpolate(TRSMatrix lhs, TRSMatrix rhs, float t) {
+        public static TRSMatrix Interpolate(
+            TRSMatrix lhs, TRSMatrix rhs, float t, bool translate, bool rotate, bool scale
+        ) {
             Vector3 lerpedTranslation = LerpPosition(lhs, rhs, t);
             Quaternion slerpedRotation = SlerpRotation(lhs, rhs, t);
             Vector3 lerpedScale = LerpScale(lhs, rhs, t);
 
-            return TRS(lerpedTranslation, slerpedRotation, lerpedScale);
+            return TRS(
+                !translate ? lerpedTranslation : Vector3.zero,
+                !rotate ? slerpedRotation : Quaternion.identity,
+                !scale ? lerpedScale : Vector3.one);
         }
 
         public static float CalculateDeterminant4x4(float[] matrix) {
@@ -476,9 +478,9 @@ namespace MA317G_Assignment2
             EditorGUILayout.BeginHorizontal();
             GUIStyle labelStyle = new GUIStyle();
             labelStyle.normal.textColor = Color.white;
-            
+
             EditorGUILayout.PrefixLabel(label.text + $"\n (det: {determinant})", GUIStyle.none, labelStyle);
-            EditorGUILayout.BeginVertical();    
+            EditorGUILayout.BeginVertical();
 
             // Display the matrix as a grid of float fields. 4 rows and 4 columns.
             for (int i = 0; i < size; i++) //number of rows
