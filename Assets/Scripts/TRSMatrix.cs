@@ -40,6 +40,10 @@ namespace MA317G_Assignment2
 
         public float determinant => CalculateDeterminant4x4(matrixArray);
 
+        public Vector3 origin {
+            get { return MultiplyPoint(new Vector3(0, 0, 0)); }
+        }
+
         #endregion
 
         #region General Public Matrix Methods
@@ -78,7 +82,9 @@ namespace MA317G_Assignment2
 
         public static Vector4 operator *(TRSMatrix lhs, Vector4 rhs) {
             Vector4 transformedVector = new Vector4();
-            for (int r = 0; r < SIZE; r++) transformedVector[r] = lhs.GetRow(r).Dot(rhs);
+            for (int r = 0; r < SIZE; r++) {
+                transformedVector[r] = lhs.GetRow(r).Dot(rhs);
+            }
             return transformedVector;
         }
 
@@ -131,36 +137,43 @@ namespace MA317G_Assignment2
             return this * new Vector4(point.x, point.y, point.z, 1);
         }
 
+        public Vector3 GetBasisVector(int index) {
+            return GetColumn(index);
+        }
+
         #endregion
 
         #region TRS specific Public Methods
 
         public Vector3 GetTranslation() {
-            //TODO return a new Vector3 instance that represents the translation of this matrix
-            return new Vector3();
+            // implicit Vector3 conversion
+            return GetColumn(3);
         }
 
         public Quaternion GetRotation() {
-            //TODO return a new Quaternion instance that represents the rotation of this matrix
-            return new Quaternion();
+            // convert rotation of the matrix into 
+            return RotationBetween(identity, this);
         }
 
         public Vector3 GetScale() {
-            //TODO return a new Vector3 instance that represents the scale of this matrix
-            return new Vector3();
+            // return the length of each basis vector of the matrix, assuming the basis vectors are orthogonal
+            float xScale = GetColumn(0).Magnitude();
+            float yScale = GetColumn(1).Magnitude();
+            float zScale = GetColumn(2).Magnitude();
+            return new Vector3(xScale, yScale, zScale);
         }
-        
+
         public void DrawCoordinateSystem(VectorRenderer vr) {
             // visualize the coordinate system represented by this matrix
-            Vector4 point000 = MultiplyPoint(new Vector4(0, 0, 0, 1));
-            Vector4 point100 = MultiplyPoint(new Vector4(1, 0, 0, 1));
-            Vector4 point010 = MultiplyPoint(new Vector4(0, 1, 0, 1));
-            Vector4 point001 = MultiplyPoint(new Vector4(0, 0, 1, 1));
-            Vector4 point110 = MultiplyPoint(new Vector4(1, 1, 0, 1));
-            Vector4 point101 = MultiplyPoint(new Vector4(1, 0, 1, 1));
-            Vector4 point011 = MultiplyPoint(new Vector4(0, 1, 1, 1));
-            Vector4 point111 = MultiplyPoint(new Vector4(1, 1, 1, 1));
-            
+            Vector4 point000 = MultiplyPoint(new Vector3(0, 0, 0));
+            Vector4 point100 = MultiplyPoint(new Vector3(1, 0, 0));
+            Vector4 point010 = MultiplyPoint(new Vector3(0, 1, 0));
+            Vector4 point001 = MultiplyPoint(new Vector3(0, 0, 1));
+            Vector4 point110 = MultiplyPoint(new Vector3(1, 1, 0));
+            Vector4 point101 = MultiplyPoint(new Vector3(1, 0, 1));
+            Vector4 point011 = MultiplyPoint(new Vector3(0, 1, 1));
+            Vector4 point111 = MultiplyPoint(new Vector3(1, 1, 1));
+
             // draw all x-aligned edges
             vr.Draw(point000, point100, Color.red);
             vr.Draw(point010, point110, Color.red);
@@ -185,18 +198,52 @@ namespace MA317G_Assignment2
         #region TRS specific Static methods
 
         private static TRSMatrix FromTranslation(Vector3 translation) {
-            //TODO return a new matrix instance that represents the given translation
-            return new TRSMatrix();
+            TRSMatrix translationMatrix = identity;
+            translationMatrix[0, 3] = translation.x;
+            translationMatrix[1, 3] = translation.y;
+            translationMatrix[2, 3] = translation.z;
+            translationMatrix[3, 3] = 1;
+            return translationMatrix;
         }
 
-        private static TRSMatrix FromRotation(Quaternion rotation) {
-            //TODO return a new matrix instance that represents the given rotation
-            return new TRSMatrix();
+        private static TRSMatrix FromRotation(Quaternion q) {
+            #region define premultiplied variables
+
+            float w = q.w;
+            float x = q.x;
+            float y = q.y;
+            float z = q.z;
+
+            float x2 = x * x;
+            float y2 = y * y;
+            float z2 = z * z;
+            float xy = x * y;
+            float yz = y * z;
+            float zx = z * x;
+            float wx = w * x;
+            float wy = w * y;
+            float wz = w * z;
+
+            #endregion
+
+            Vector4 row0 = new Vector4(1 - 2 * (y2 + z2), 2 * (xy - wz),     2 * (zx + wy),     0);
+            Vector4 row1 = new Vector4(2 * (xy + wz),     1 - 2 * (z2 + x2), 2 * (yz - wx),     0);
+            Vector4 row2 = new Vector4(2 * (zx - wy),     2 * (yz + wx),     1 - 2 * (x2 + y2), 0);
+
+            TRSMatrix rotationMatrix = identity;
+            rotationMatrix.SetRow(0, row0);
+            rotationMatrix.SetRow(1, row1);
+            rotationMatrix.SetRow(2, row2);
+
+            return rotationMatrix;
         }
 
         private static TRSMatrix FromScale(Vector3 scale) {
-            //TODO return a new matrix instance that represents the given scale
-            return new TRSMatrix();
+            TRSMatrix scalingMatrix = identity;
+            scalingMatrix[0, 0] = scale.x;
+            scalingMatrix[1, 1] = scale.y;
+            scalingMatrix[2, 2] = scale.z;
+            return scalingMatrix;
         }
 
         /// <summary>
@@ -207,35 +254,50 @@ namespace MA317G_Assignment2
         /// <param name="scale">The local scale of the TRSMatrix. Scaled relative to the rotation of the TRSMatrix, not world space.</param>
         /// <returns></returns>
         public static TRSMatrix TRS(Vector3 translation, Quaternion rotation, Vector3 scale) {
-            return TRSMatrix.FromTranslation(translation) *
-                   TRSMatrix.FromRotation(rotation) * TRSMatrix.FromScale(scale);
+            return FromTranslation(translation) * FromRotation(rotation) * FromScale(scale);
         }
 
-        public static Vector3 LerpPosition(TRSMatrix matrixA, TRSMatrix matrixB, float t) {
-            //TODO return the position between matrixA and matrixB based on interpolation value t
-            return new Vector3();
+        public static Vector3 LerpPosition(TRSMatrix A, TRSMatrix B, float t) {
+            Vector3 translationA = A.GetTranslation();
+            Vector3 translationB = B.GetTranslation();
+            Vector3 difference = translationB - translationA;
+            return translationA + difference * t;
         }
 
-        public static Quaternion SlerpRotation(TRSMatrix matrixA, TRSMatrix matrixB, float time) {
-            //TODO return the rotation between matrixA and matrixB based on interpolation value t
-            return new Quaternion();
+        public static Quaternion SlerpRotation(TRSMatrix A, TRSMatrix B, float t) {
+            Quaternion betweenAB = RotationBetween(A, B);
+
+            // return the identity if A and B have same orientation
+            if (Mathf.Approximately(betweenAB.w, 1f)) return Quaternion.identity;
+
+            float halfAngle = Mathf.Acos(betweenAB.w);
+            Debug.Log(halfAngle);
+            float interpolatedAngle = halfAngle * t;
+            float wNew = Mathf.Cos(interpolatedAngle);
+
+            float vectorScale = Mathf.Sin(interpolatedAngle) / Mathf.Sin(halfAngle);
+            float xNew = betweenAB.x * vectorScale;
+            float yNew = betweenAB.y * vectorScale;
+            float zNew = betweenAB.z * vectorScale;
+
+            return new Quaternion(xNew, yNew, zNew, wNew);
         }
 
-        public static Vector3 LerpScale(TRSMatrix matrixA, TRSMatrix matrixB, float time) {
-            //TODO return the scale between matrixA and matrixB based on interpolation value t
-            return new Vector3();
+        public static Vector3 LerpScale(TRSMatrix A, TRSMatrix B, float t) {
+            Vector3 scaleA = A.GetScale();
+            Vector3 scaleB = B.GetScale();
+            Vector3 difference = scaleB - scaleA;
+            return scaleA + difference * t;
         }
 
         #endregion
 
         public static TRSMatrix Interpolate(TRSMatrix lhs, TRSMatrix rhs, float t) {
-            TRSMatrix interpolated = new TRSMatrix();
-            for (int r = 0; r < SIZE; r++) {
-                for (int c = 0; c < SIZE; c++) {
-                    interpolated[r, c] = Mathf.Lerp(lhs[r, c], rhs[r, c], t);
-                }
-            }
-            return interpolated;
+            Vector3 lerpedTranslation = LerpPosition(lhs, rhs, t);
+            Quaternion slerpedRotation = SlerpRotation(lhs, rhs, t);
+            Vector3 lerpedScale = LerpScale(lhs, rhs, t);
+
+            return TRS(lerpedTranslation, slerpedRotation, lerpedScale);
         }
 
         public static float CalculateDeterminant4x4(float[] matrix) {
@@ -273,6 +335,79 @@ namespace MA317G_Assignment2
                 }
             }
             return minor.ToArray();
+        }
+
+        public static Quaternion RotationBetween(TRSMatrix lhs, TRSMatrix rhs) {
+            Vector3 leftXbasis = lhs.GetBasisVector(0);
+            Vector3 leftYbasis = lhs.GetBasisVector(1);
+            Vector3 leftZbasis = lhs.GetBasisVector(2);
+
+            Vector3 rightXbasis = rhs.GetBasisVector(0);
+            Vector3 rightYbasis = rhs.GetBasisVector(1);
+            Vector3 rightZbasis = rhs.GetBasisVector(2);
+
+            // calculate weighted components of final rotation axis
+            Vector3 rotateX = leftXbasis.Normalized().Cross(rightXbasis.Normalized());
+            Vector3 rotateY = leftYbasis.Normalized().Cross(rightYbasis.Normalized());
+            Vector3 rotateZ = leftZbasis.Normalized().Cross(rightZbasis.Normalized());
+            Vector3 rotationAxis = rotateX + rotateY + rotateZ;
+
+            // if any cross products are the zero vector that axis is the rotation axis
+            // this avoids division by zero in the coming projection steps
+            if (rotateX.IsZeroVector()) rotationAxis = leftXbasis.Normalized();
+            if (rotateY.IsZeroVector()) rotationAxis = leftYbasis.Normalized();
+            if (rotateZ.IsZeroVector()) rotationAxis = leftZbasis.Normalized();
+
+            Vector4 normalisedRotationAxis = rotationAxis.Normalized();
+
+            // project basis vectors of each matrix onto plane defined by rotation axis
+            Vector4 leftXProjection = leftXbasis - leftXbasis.ProjectOnto(rotationAxis);
+            Vector4 leftYProjection = leftYbasis - leftYbasis.ProjectOnto(rotationAxis);
+            Vector4 leftZProjection = leftZbasis - leftZbasis.ProjectOnto(rotationAxis);
+
+            Vector4 rightXProjection = rightXbasis - rightXbasis.ProjectOnto(rotationAxis);
+            Vector4 rightYProjection = rightYbasis - rightYbasis.ProjectOnto(rotationAxis);
+            Vector4 rightZProjection = rightZbasis - rightZbasis.ProjectOnto(rotationAxis);
+
+            // Check which projected pair of vectores are least parallell to the rotation axis...
+            float AbsSummedDotX = Mathf.Abs(lhs.GetColumn(0).Dot(normalisedRotationAxis) +
+                                            rhs.GetColumn(0).Dot(normalisedRotationAxis));
+            float AbsSummedDotY = Mathf.Abs(lhs.GetColumn(1).Dot(normalisedRotationAxis) +
+                                            rhs.GetColumn(1).Dot(normalisedRotationAxis));
+            float AbsSummedDotZ = Mathf.Abs(lhs.GetColumn(2).Dot(normalisedRotationAxis) +
+                                            rhs.GetColumn(2).Dot(normalisedRotationAxis));
+
+            // ...and calculate the angle between those vectors
+            float angularDisplacement;
+            if (AbsSummedDotX < AbsSummedDotY && AbsSummedDotX < AbsSummedDotZ) {
+                // x is closest to the plane
+                angularDisplacement = Mathf.Acos(leftXProjection.Normalized().Dot(rightXProjection.Normalized()));
+            }
+            else if (AbsSummedDotY < AbsSummedDotZ) {
+                // y is closest to the plane
+                angularDisplacement = Mathf.Acos(leftYProjection.Normalized().Dot(rightYProjection.Normalized()));
+            }
+            else {
+                // z is closest to the plane
+                angularDisplacement = Mathf.Acos(leftZProjection.Normalized().Dot(rightZProjection.Normalized()));
+            }
+
+            // create a quaternion from the rotation axis and angular displacement
+
+            float scalar = Mathf.Cos(angularDisplacement / 2);
+            Vector4 vector = Mathf.Sin(angularDisplacement / 2) * normalisedRotationAxis;
+            return new Quaternion(vector.x, vector.y, vector.z, scalar);
+        }
+
+        public override string ToString() {
+            string returnString = "\n";
+            for (int i = 0; i < SIZE; i++) {
+                for (int j = 0; j < SIZE; j++) {
+                    returnString += this[i, j] + " ";
+                }
+                returnString += "\n";
+            }
+            return returnString;
         }
     }
 

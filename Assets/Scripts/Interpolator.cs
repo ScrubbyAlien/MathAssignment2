@@ -7,19 +7,16 @@ using Vectors;
 [ExecuteAlways, RequireComponent(typeof(VectorRenderer))]
 public class Interpolator : MonoBehaviour
 {
-    [SerializeField]
-    private TRSMatrix startMatrix;
-    [SerializeField]
-    private TRSMatrix endMatrix;
+    public TRSMatrix startMatrix;
+    public TRSMatrix endMatrix;
+
+    [ReadOnly]
+    public TRSMatrix interpolatedMatrix;
 
     private VectorRenderer vr;
 
     [SerializeField, Range(0, 1)]
     private float t = 0.5f;
-
-    private TRSMatrix interpolatedMatrix {
-        get { return TRSMatrix.Interpolate(startMatrix, endMatrix, t); }
-    }
 
     // Start is called before the first frame update
     void OnEnable() {
@@ -31,7 +28,9 @@ public class Interpolator : MonoBehaviour
         using (vr.Begin()) {
             startMatrix.DrawCoordinateSystem(vr);
             endMatrix.DrawCoordinateSystem(vr);
+            interpolatedMatrix = TRSMatrix.Interpolate(startMatrix, endMatrix, t);
             interpolatedMatrix.DrawCoordinateSystem(vr);
+            vr.Draw(startMatrix.origin, endMatrix.origin, Color.white);
         }
     }
 }
