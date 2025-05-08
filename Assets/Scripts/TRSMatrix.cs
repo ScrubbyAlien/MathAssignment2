@@ -333,14 +333,19 @@ namespace MA317G_Assignment2
         #endregion
 
         public static TRSMatrix Interpolate(
-            TRSMatrix lhs, TRSMatrix rhs, float t, bool translate, bool rotate, bool scale
+            TRSMatrix lhs,
+            TRSMatrix rhs,
+            float t,
+            bool translate,
+            bool rotate,
+            bool scale
         ) {
             Vector3 lerpedTranslation = LerpPosition(lhs, rhs, t);
             Quaternion slerpedRotation = SlerpRotation(lhs, rhs, t);
             Vector3 lerpedScale = LerpScale(lhs, rhs, t);
 
             return TRS(
-                !translate ? lerpedTranslation : Vector3.zero,
+                !translate ? lerpedTranslation : lhs.GetTranslation(),
                 !rotate ? slerpedRotation : Quaternion.identity,
                 !scale ? lerpedScale : Vector3.one);
         }
@@ -479,7 +484,7 @@ namespace MA317G_Assignment2
             GUIStyle labelStyle = new GUIStyle();
             labelStyle.normal.textColor = Color.white;
 
-            EditorGUILayout.PrefixLabel(label.text + $"\n (det: {determinant})", GUIStyle.none, labelStyle);
+            EditorGUILayout.PrefixLabel(label.text + $"\n(det: {determinant})", GUIStyle.none, labelStyle);
             EditorGUILayout.BeginVertical();
 
             // Display the matrix as a grid of float fields. 4 rows and 4 columns.
