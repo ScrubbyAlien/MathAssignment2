@@ -226,9 +226,9 @@ namespace MA317G_Assignment2
 
             #endregion
 
-            Vector4 row0 = new Vector4(1 - 2 * (y2 + z2), 2 * (xy - wz),     2 * (zx + wy),     0);
-            Vector4 row1 = new Vector4(2 * (xy + wz),     1 - 2 * (z2 + x2), 2 * (yz - wx),     0);
-            Vector4 row2 = new Vector4(2 * (zx - wy),     2 * (yz + wx),     1 - 2 * (x2 + y2), 0);
+            Vector4 row0 = new Vector4(1 - 2 * (y2 + z2), 2 * (xy - wz), 2 * (zx + wy), 0);
+            Vector4 row1 = new Vector4(2 * (xy + wz), 1 - 2 * (z2 + x2), 2 * (yz - wx), 0);
+            Vector4 row2 = new Vector4(2 * (zx - wy), 2 * (yz + wx), 1 - 2 * (x2 + y2), 0);
 
             TRSMatrix rotationMatrix = identity;
             rotationMatrix.SetRow(0, row0);
@@ -264,14 +264,55 @@ namespace MA317G_Assignment2
             return translationA + difference * t;
         }
 
+        // public static Quaternion SlerpRotation(TRSMatrix A, TRSMatrix B, float t) {
+        //     // slerp computation from chapter 8.5.12
+        //     Quaternion q0 = A.GetRotation();
+        //     Quaternion q1 = B.GetRotation();
+        //
+        //     // get angle between them with dot product
+        //     float cosOmega = q0.Dot(q1);
+        //
+        //     // invert of cosine is negative
+        //     if (cosOmega < 0) {
+        //         q1 = q1.Negate();
+        //         cosOmega = -cosOmega;
+        //     }
+        //
+        //     float k0, k1;
+        //     // if orientations are very close use lerp
+        //     if (cosOmega > 0.9999f) {
+        //         k0 = 1f - t;
+        //         k1 = t;
+        //     }
+        //     else { // compute slerp
+        //         // compute sin with trig identity sin2 + cos2 = 1
+        //         float sinOmega = Mathf.Sqrt(1 - (cosOmega * cosOmega));
+        //         float omega = Mathf.Atan2(sinOmega, cosOmega);
+        //         float omegaInverse = 1f / omega;
+        //         k0 = Mathf.Sin((1f - t) * omega) * omegaInverse;
+        //         k1 = Mathf.Sin(t * omega) * omegaInverse;
+        //     }
+        //
+        //     // interpolate with k0 and k1
+        //     float w = q0.w * k0 + q1.w * k1;
+        //     float x = q0.x * k0 + q1.x * k1;
+        //     float y = q0.y * k0 + q1.y * k1;
+        //     float z = q0.z * k0 + q1.z * k1;
+        //     return new Quaternion(x, y, z, w);
+        // }
+
         public static Quaternion SlerpRotation(TRSMatrix A, TRSMatrix B, float t) {
-            Quaternion betweenAB = RotationBetween(A, B);
+            Quaternion q1 = A.GetRotation();
+            Quaternion q2 = B.GetRotation();
+            Quaternion betweenAB = q2 * q1.Conjugate();
 
             // return the identity if A and B have same orientation
-            if (Mathf.Approximately(betweenAB.w, 1f)) return Quaternion.identity;
+            if (Mathf.Abs(betweenAB.w) > 0.9999f) {
+                Debug.Log("w is almost 1");
+                return Quaternion.identity;
+            }
 
             float halfAngle = Mathf.Acos(betweenAB.w);
-            Debug.Log(halfAngle);
             float interpolatedAngle = halfAngle * t;
             float wNew = Mathf.Cos(interpolatedAngle);
 
@@ -280,7 +321,9 @@ namespace MA317G_Assignment2
             float yNew = betweenAB.y * vectorScale;
             float zNew = betweenAB.z * vectorScale;
 
-            return new Quaternion(xNew, yNew, zNew, wNew);
+            // Debug.Log(vectorScale);
+
+            return new Quaternion(xNew, yNew, zNew, wNew) * A.GetRotation();
         }
 
         public static Vector3 LerpScale(TRSMatrix A, TRSMatrix B, float t) {
@@ -431,8 +474,11 @@ namespace MA317G_Assignment2
             float determinant = TRSMatrix.CalculateDeterminant4x4(matrixArray);
 
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.PrefixLabel(label.text + $" (det: {determinant})");
-            EditorGUILayout.BeginVertical();
+            GUIStyle labelStyle = new GUIStyle();
+            labelStyle.normal.textColor = Color.white;
+            
+            EditorGUILayout.PrefixLabel(label.text + $"\n (det: {determinant})", GUIStyle.none, labelStyle);
+            EditorGUILayout.BeginVertical();    
 
             // Display the matrix as a grid of float fields. 4 rows and 4 columns.
             for (int i = 0; i < size; i++) //number of rows

@@ -34,11 +34,12 @@ public class MatrixManipulatorTool : EditorTool
 
             Handles.TransformHandle(ref startPosition, ref startRotation, ref startScale);
             Handles.TransformHandle(ref endPosition, ref endRotation, ref endScale);
-
+            
+            interpolator.startMatrix = TRSMatrix.TRS(startPosition, startRotation, startScale);
+            interpolator.endMatrix = TRSMatrix.TRS(endPosition, endRotation, endScale);
+            
             if (EditorGUI.EndChangeCheck()) {
                 Undo.RecordObject(interpolator, "Interpolator");
-                interpolator.startMatrix = TRSMatrix.TRS(startPosition, startRotation, startScale);
-                interpolator.endMatrix = TRSMatrix.TRS(endPosition, endRotation, endScale);
             }
         }
     }

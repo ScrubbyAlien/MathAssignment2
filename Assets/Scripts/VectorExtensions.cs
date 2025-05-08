@@ -43,6 +43,10 @@ public static class VectorExtensions
         return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z);
     }
 
+    public static float Dot(this Quaternion q1, Quaternion q2) {
+        return (q1.x * q2.x) + (q1.y * q2.y) + (q1.z * q2.z) + (q1.w * q2.w);
+    }
+
     public static Vector4 Cross(this Vector4 v1, Vector4 v2) {
         float x = v1.y * v2.z - v1.z * v2.y;
         float y = v1.z * v2.x - v1.x * v2.z;
@@ -73,5 +77,8 @@ public static class VectorExtensions
 
     public static Quaternion Conjugate(this Quaternion q) {
         return new Quaternion(-q.x, -q.y, -q.z, q.w);
+    }
+    public static Quaternion Negate(this Quaternion q) {
+        return new Quaternion(-q.x, -q.y, -q.z, -q.w);
     }
 }
