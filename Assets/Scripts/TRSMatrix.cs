@@ -346,8 +346,8 @@ namespace MA317G_Assignment2
 
             return TRS(
                 !translate ? lerpedTranslation : lhs.GetTranslation(),
-                !rotate ? slerpedRotation : Quaternion.identity,
-                !scale ? lerpedScale : Vector3.one);
+                !rotate ? slerpedRotation : lhs.GetRotation(),
+                !scale ? lerpedScale : lhs.GetScale());
         }
 
         public static float CalculateDeterminant4x4(float[] matrix) {

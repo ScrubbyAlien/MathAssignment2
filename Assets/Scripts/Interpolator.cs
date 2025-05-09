@@ -25,7 +25,7 @@ public class Interpolator : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update() {
+    public void Update() {
         using (vr.Begin()) {
             startMatrix.DrawCoordinateSystem(vr);
             endMatrix.DrawCoordinateSystem(vr);
