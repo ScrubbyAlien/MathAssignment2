@@ -420,27 +420,34 @@ namespace MA317G_Assignment2
             Vector4 rightZProjection = rightZbasis - rightZbasis.ProjectOnto(rotationAxis);
 
             // Check which projected pair of vectores are least parallell to the rotation axis...
-            float AbsSummedDotX = Mathf.Abs(lhs.GetColumn(0).Dot(normalisedRotationAxis) +
-                                            rhs.GetColumn(0).Dot(normalisedRotationAxis));
-            float AbsSummedDotY = Mathf.Abs(lhs.GetColumn(1).Dot(normalisedRotationAxis) +
-                                            rhs.GetColumn(1).Dot(normalisedRotationAxis));
-            float AbsSummedDotZ = Mathf.Abs(lhs.GetColumn(2).Dot(normalisedRotationAxis) +
-                                            rhs.GetColumn(2).Dot(normalisedRotationAxis));
+            float AbsSummedDotX = Mathf.Abs(leftXbasis.Dot(normalisedRotationAxis) +
+                                            rightXbasis.Dot(normalisedRotationAxis));
+            float AbsSummedDotY = Mathf.Abs(leftYbasis.Dot(normalisedRotationAxis) +
+                                            rightYbasis.Dot(normalisedRotationAxis));
+            float AbsSummedDotZ = Mathf.Abs(leftZbasis.Dot(normalisedRotationAxis) +
+                                            rightZbasis.Dot(normalisedRotationAxis));
 
             // ...and calculate the angle between those vectors
             float angularDisplacement;
+            float rotationDirection = 1;
             if (AbsSummedDotX < AbsSummedDotY && AbsSummedDotX < AbsSummedDotZ) {
                 // x is closest to the plane
                 angularDisplacement = Mathf.Acos(leftXProjection.Normalized().Dot(rightXProjection.Normalized()));
+                rotationDirection = Mathf.Sign(leftXProjection.Cross(rightXProjection).Dot(rotationAxis));
             }
             else if (AbsSummedDotY < AbsSummedDotZ) {
                 // y is closest to the plane
                 angularDisplacement = Mathf.Acos(leftYProjection.Normalized().Dot(rightYProjection.Normalized()));
+                rotationDirection = Mathf.Sign(leftYProjection.Cross(rightYProjection).Dot(rotationAxis));
             }
             else {
                 // z is closest to the plane
                 angularDisplacement = Mathf.Acos(leftZProjection.Normalized().Dot(rightZProjection.Normalized()));
+                rotationDirection = Mathf.Sign(leftZProjection.Cross(rightZProjection).Dot(rotationAxis));
             }
+            // flip angularDisplacement if rotating against left hand rule direction
+            // solution inspired by https://stackoverflow.com/questions/5188561/signed-angle-between-two-3d-vectors-with-same-origin-within-the-same-plane
+            angularDisplacement *= rotationDirection;
 
             // create a quaternion from the rotation axis and angular displacement
 
