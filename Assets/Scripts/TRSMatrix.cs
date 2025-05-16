@@ -447,6 +447,9 @@ namespace MA317G_Assignment2
             }
             // flip angularDisplacement if rotating against left hand rule direction
             // solution inspired by https://stackoverflow.com/questions/5188561/signed-angle-between-two-3d-vectors-with-same-origin-within-the-same-plane
+            // calculate the cross product between projected vectors on rotation plane, normalise it,
+            // take dot product with rotation axis. The sign of the dot product will be postive (1) if 
+            // rotating with left hand rule and negative (-1) if rotating against it.
             angularDisplacement *= rotationDirection;
 
             // create a quaternion from the rotation axis and angular displacement
